@@ -94,155 +94,154 @@ initializeApp().catch(error => {
     console.error("Error initializing application:", error);
 });
 
-    // Upload photo endpoint
-    app.post('/uploadphoto', uploadStrategy, (req, res) => {
-        if (!req.file) {
-            return res.status(400).send('No file uploaded.');
-        }
+// Upload photo endpoint
+app.post('/uploadphoto', uploadStrategy, (req, res) => {
+    if (!req.file) {
+        return res.status(400).send('No file uploaded.');
+    }
 
+    const blobName = `userphotos/${Date.now()}_${req.file.originalname}`;
+    const stream = getStream(req.file.buffer);
+    const streamLength = req.file.buffer.length;
+    const blobService = azureStorage.createBlobService(azureStorageConnectionString);
+
+    blobService.createBlockBlobFromStream('pics', blobName, stream, streamLength, err => {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Error uploading the file');
+        } else {
+            const photoUrl = `https://${storageAccountName}.blob.core.windows.net/pics/${blobName}`;
+            res.status(200).send({ photoUrl });
+        }
+    });
+});
+
+// Register endpoint
+app.post('/register', uploadStrategy, async (req, res) => {
+    const { firstName, lastName, username, password, age, emailAddress, genres } = req.body;
+    if (!password) {
+        return res.status(400).send({ message: 'Password is required' });
+    }
+
+    let photoUrl = '';
+    if (req.file) {
         const blobName = `userphotos/${Date.now()}_${req.file.originalname}`;
         const stream = getStream(req.file.buffer);
         const streamLength = req.file.buffer.length;
         const blobService = azureStorage.createBlobService(azureStorageConnectionString);
 
-        blobService.createBlockBlobFromStream('pics', blobName, stream, streamLength, err => {
-            if (err) {
-                console.error(err);
-                res.status(500).send('Error uploading the file');
-            } else {
-                const photoUrl = `https://${storageAccountName}.blob.core.windows.net/pics/${blobName}`;
-                res.status(200).send({ photoUrl });
-            }
-        });
-    });
-
-    // Register endpoint
-    app.post('/register', uploadStrategy, async (req, res) => {
-        const { firstName, lastName, username, password, age, emailAddress, genres } = req.body;
-        if (!password) {
-            return res.status(400).send({ message: 'Password is required' });
-        }
-
-        let photoUrl = '';
-        if (req.file) {
-            const blobName = `userphotos/${Date.now()}_${req.file.originalname}`;
-            const stream = getStream(req.file.buffer);
-            const streamLength = req.file.buffer.length;
-            const blobService = azureStorage.createBlobService(azureStorageConnectionString);
-
-            await new Promise((resolve, reject) => {
-                blobService.createBlockBlobFromStream('pics', blobName, stream, streamLength, err => {
-                    if (err) {
-                        console.error(err);
-                        reject(err);
-                    } else {
-                        photoUrl = `https://${storageAccountName}.blob.core.windows.net/pics/${blobName}`;
-                        resolve();
-                    }
-                });
+        await new Promise((resolve, reject) => {
+            blobService.createBlockBlobFromStream('pics', blobName, stream, streamLength, err => {
+                if (err) {
+                    console.error(err);
+                    reject(err);
+                } else {
+                    photoUrl = `https://${storageAccountName}.blob.core.windows.net/pics/${blobName}`;
+                    resolve();
+                }
             });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        try {
-            let pool = await sql.connect(sqlConfig);
-            let result = await pool.request()
-                .input('username', sql.NVarChar, username)
-                .input('password', sql.NVarChar, hashedPassword)
-                .input('firstname', sql.NVarChar, firstName)
-                .input('lastname', sql.NVarChar, lastName)
-                .input('age', sql.Int, age)
-                .input('emailAddress', sql.NVarChar, emailAddress)
-                .input('photoUrl', sql.NVarChar, photoUrl)
-                .query(`
-                    INSERT INTO Users 
-                    (Username, PasswordHash, FirstName, LastName, Age, EmailAddress, PhotoUrl) 
-                    VALUES 
-                    (@username, @password, @firstname, @lastname, @age, @emailAddress, @photoUrl);
-                    SELECT SCOPE_IDENTITY() AS UserId;
-                `);
-
-            const userId = result.recordset[0].UserId;
-
-            if (genres && genres.length > 0) {
-                const genreNames = genres.split(','); // Assuming genres are sent as a comma-separated string
-                for (const genreName of genreNames) {
-                    let genreResult = await pool.request()
-                        .input('genreName', sql.NVarChar, genreName.trim())
-                        .query(`
-                            IF NOT EXISTS (SELECT 1 FROM Genres WHERE GenreName = @genreName)
-                            BEGIN
-                                INSERT INTO Genres (GenreName) VALUES (@genreName);
-                            END
-                            SELECT GenreId FROM Genres WHERE GenreName = @genreName;
-                        `);
-
-                    const genreId = genreResult.recordset[0].GenreId;
-
-                    await pool.request()
-                        .input('userId', sql.Int, userId)
-                        .input('genreId', sql.Int, genreId)
-                        .query('INSERT INTO UsersGenres (UserId, GenreId) VALUES (@userId, @genreId)');
-                }
-            }
-
-            res.status(201).send({ message: 'User registered successfully' });
-        } catch (error) {
-            console.error(error);
-            res.status(500).send({ message: 'Error registering user' });
-        }
-    });
-
-    // Login endpoint
-    app.post('/login', async (req, res) => {
-        try {
-            let pool = await sql.connect(sqlConfig);
-            let result = await pool.request()
-                .input('username', sql.NVarChar, req.body.username)
-                .query('SELECT UserId, PasswordHash FROM Users WHERE Username = @username');
-
-            if (result.recordset.length === 0) {
-                return res.status(401).send({ message: 'Invalid username or password' });
-            }
-
-            const user = result.recordset[0];
-            const validPassword = await bcrypt.compare(req.body.password, user.PasswordHash);
-
-            if (!validPassword) {
-                return res.status(401).send({ message: 'Invalid username or password' });
-            }
-
-            const token = jwt.sign({ UserId: user.UserId }, jwtSecret, { expiresIn: '1h' });
-            res.send({ token: token, UserId: user.UserId });
-        } catch (error) {
-            console.error(error);
-            res.status(500).send({ message: 'Error logging in' });
-        }
-    });
-
-    // Get user data endpoint
-    app.get('/user/:UserId', async (req, res) => {
-        try {
-            let pool = await sql.connect(sqlConfig);
-            let result = await pool.request()
-                .input('UserId', sql.Int, req.params.UserId)
-                .query('SELECT Username, FirstName, LastName, Age, EmailAddress, PhotoUrl FROM Users WHERE UserId = @UserId');
-
-                if (result.recordset.length === 0) {
-                    return res.status(404).send({ message: 'User not found' });
-                }
-    
-                const user = result.recordset[0];
-                res.send(user);
-            } catch (error) {
-                console.error(error);
-                res.status(500).send({ message: 'Error fetching user data' });
-            }
         });
-    
+    }
 
-/// AI Assistant endpoint for book questions and recommendations
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    try {
+        let pool = await sql.connect(sqlConfig);
+        let result = await pool.request()
+            .input('username', sql.NVarChar, username)
+            .input('password', sql.NVarChar, hashedPassword)
+            .input('firstname', sql.NVarChar, firstName)
+            .input('lastname', sql.NVarChar, lastName)
+            .input('age', sql.Int, age)
+            .input('emailAddress', sql.NVarChar, emailAddress)
+            .input('photoUrl', sql.NVarChar, photoUrl)
+            .query(`
+                INSERT INTO Users 
+                (Username, PasswordHash, FirstName, LastName, Age, EmailAddress, PhotoUrl) 
+                VALUES 
+                (@username, @password, @firstname, @lastname, @age, @emailAddress, @photoUrl);
+                SELECT SCOPE_IDENTITY() AS UserId;
+            `);
+
+        const userId = result.recordset[0].UserId;
+
+        if (genres && genres.length > 0) {
+            const genreNames = genres.split(','); // Assuming genres are sent as a comma-separated string
+            for (const genreName of genreNames) {
+                let genreResult = await pool.request()
+                    .input('genreName', sql.NVarChar, genreName.trim())
+                    .query(`
+                        IF NOT EXISTS (SELECT 1 FROM Genres WHERE GenreName = @genreName)
+                        BEGIN
+                            INSERT INTO Genres (GenreName) VALUES (@genreName);
+                        END
+                        SELECT GenreId FROM Genres WHERE GenreName = @genreName;
+                    `);
+
+                const genreId = genreResult.recordset[0].GenreId;
+
+                await pool.request()
+                    .input('userId', sql.Int, userId)
+                    .input('genreId', sql.Int, genreId)
+                    .query('INSERT INTO UsersGenres (UserId, GenreId) VALUES (@userId, @genreId)');
+            }
+        }
+
+        res.status(201).send({ message: 'User registered successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Error registering user' });
+    }
+});
+
+// Login endpoint
+app.post('/login', async (req, res) => {
+    try {
+        let pool = await sql.connect(sqlConfig);
+        let result = await pool.request()
+            .input('username', sql.NVarChar, req.body.username)
+            .query('SELECT UserId, PasswordHash FROM Users WHERE Username = @username');
+
+        if (result.recordset.length === 0) {
+            return res.status(401).send({ message: 'Invalid username or password' });
+        }
+
+        const user = result.recordset[0];
+        const validPassword = await bcrypt.compare(req.body.password, user.PasswordHash);
+
+        if (!validPassword) {
+            return res.status(401).send({ message: 'Invalid username or password' });
+        }
+
+        const token = jwt.sign({ UserId: user.UserId }, jwtSecret, { expiresIn: '1h' });
+        res.send({ token: token, UserId: user.UserId });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Error logging in' });
+    }
+});
+
+// Get user data endpoint
+app.get('/user/:UserId', async (req, res) => {
+    try {
+        let pool = await sql.connect(sqlConfig);
+        let result = await pool.request()
+            .input('UserId', sql.Int, req.params.UserId)
+            .query('SELECT Username, FirstName, LastName, Age, EmailAddress, PhotoUrl FROM Users WHERE UserId = @UserId');
+
+        if (result.recordset.length === 0) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        const user = result.recordset[0];
+        res.send(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Error fetching user data' });
+    }
+});
+
+// AI Assistant endpoint for book questions and recommendations
 app.post('/ai-assistant', async (req, res) => {
     const { query, userId } = req.body;
 
@@ -316,7 +315,7 @@ app.post('/ai-assistant', async (req, res) => {
                 });
             }
 
-  			// Limit recommendations to top 5
+            // Limit recommendations to top 5
             const topRecommendations = recommendations.slice(0, 5);
 
             return res.json({ response: "Here are some personalized recommendations for you:", recommendations: topRecommendations });

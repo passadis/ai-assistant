@@ -8,6 +8,8 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState('');
   const [aiResponse, setAiResponse] = useState('');
+  const [recommendations, setRecommendations] = useState([]);
+  const [chatHistory, setChatHistory] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,10 +21,20 @@ const Dashboard = () => {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
           });
           setUser(response.data);
+          fetchRecommendations(response.data.UserId);
         } catch (error) {
           console.error('Error fetching user data:', error);
           navigate('/');
         }
+      }
+    };
+
+    const fetchRecommendations = async (userId) => {
+      try {
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/ai-assistant`, { query: 'recommendation', userId });
+        setRecommendations(response.data.recommendations);
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
       }
     };
 
@@ -43,12 +55,13 @@ const Dashboard = () => {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/ai-assistant`, { query, userId });
       setAiResponse(response.data.response);
 
-      // Add recommendations to AI response
-      const recommendations = response.data.recommendations || [];
-      const recommendationsText = recommendations.map(rec => `${rec.title} by ${rec.author}`).join('\n');
-      const fullResponse = `${response.data.response}\n\n\n${recommendationsText}`;
-      setAiResponse(fullResponse);
-
+      // Update chat history
+      const newEntry = {
+        query: query,
+        response: response.data.response,
+        recommendations: response.data.recommendations || [],
+      };
+      setChatHistory([...chatHistory, newEntry]);
       setQuery(''); // Clear the input box after submission
     } catch (error) {
       console.error('Error during query processing:', error);
@@ -62,7 +75,7 @@ const Dashboard = () => {
 
   const defaultPhotoUrl = logo;
 
-return (
+  return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="user-info">
@@ -79,11 +92,20 @@ return (
       </header>
       <main>
         <div className="chat-box">
-          <div className="ai-response">
-            {aiResponse}
-          </div>
           <div className="chat-history">
-            {/* Display chat history here if needed */}
+            {chatHistory.map((entry, index) => (
+              <div key={index} className="chat-entry">
+                <div className="user-query">{entry.query}</div>
+                <div className="assistant-response">{entry.response}</div>
+                <div className="recommendations">
+                  {entry.recommendations.map((rec, recIndex) => (
+                    <div key={recIndex} className="recommendation-box">
+                      {rec.title} by {rec.author}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
           <input
             type="text"
@@ -92,6 +114,9 @@ return (
             placeholder="Ask about books or request recommendations..."
           />
           <button onClick={handleQuery}>Send</button>
+        </div>
+        <div className="ai-response">
+          {aiResponse}
         </div>
       </main>
     </div>
