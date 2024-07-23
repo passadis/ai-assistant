@@ -1,0 +1,100 @@
+/* Dashboard.css */
+
+.dashboard {
+  text-align: center;
+  background-color: #f0f8ff;
+}
+
+.dashboard-header {
+  background-color: #e0fff0;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-photo {
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  background-color: #fff;
+  margin-right: 10px;
+}
+
+.user-name {
+  color: #333;
+  font-weight: bold;
+  font-size: 1.2em;
+  margin: 0 10px;
+}
+
+.logo {
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+}
+
+.App-logo {
+  width: 100px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.search-area {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.search-input {
+  width: 60%;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+}
+
+.search-button {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.search-button:hover {
+  opacity: 0.8;
+}
+
+.map-container {
+  height: 400px; /* Set the height for the map */
+  width: 100%;
+}
+
+.ai-response {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ddd; /* Example styling */
+  border-radius: 5px;
+}
+
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .search-input {
+    width: 80%;
+  }
+}

@@ -1,0 +1,52 @@
+.App {
+  text-align: center;
+  background-color: #f0f8ff; /* Light blue background */
+}
+
+.App-header {
+  background-color: #e0fff0; /* Light green header background */
+  padding: 20px;
+  border-radius: 10px;
+  margin: 30px auto;
+  width: 80%;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.logo {
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  background-color: #fff;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+}
+
+input {
+  margin: 10px;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+}
+
+button {
+  background-color: #4CAF50; /* Green */
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.App-logo {
+  width: 100px; /* Adjust the size as necessary */
+  height: auto;
+  margin-bottom: 20px; /* Add spacing below the logo if needed */
+}
