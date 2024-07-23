@@ -68,14 +68,14 @@ async function initializeApp() {
     openaiEndpoint = await getSecret("openai-endpoint");
     openaiApiKey = await getSecret("openai-apikey");
 
-    console.log("SQL Config:", sqlConfig);
-    console.log("Storage Account Name:", storageAccountName);
-    console.log("Azure Storage Connection String:", azureStorageConnectionString);
-    console.log("JWT Secret:", jwtSecret);
-    console.log("Search Endpoint:", searchEndpoint);
-    console.log("Search API Key:", searchApiKey);
-    console.log("OpenAI Endpoint:", openaiEndpoint);
-    console.log("OpenAI API Key:", openaiApiKey);
+    //console.log("SQL Config:", sqlConfig);
+    // console.log("Storage Account Name:", storageAccountName);
+    // console.log("Azure Storage Connection String:", azureStorageConnectionString);
+    // console.log("JWT Secret:", jwtSecret);
+    // console.log("Search Endpoint:", searchEndpoint);
+    // console.log("Search API Key:", searchApiKey);
+    // console.log("OpenAI Endpoint:", openaiEndpoint);
+    // console.log("OpenAI API Key:", openaiApiKey);
 
     // Initialize OpenAI and Azure Search clients
     const openaiClient = new OpenAIClient(openaiEndpoint, new AzureKeyCredential(openaiApiKey));
@@ -254,7 +254,7 @@ app.post('/ai-assistant', async (req, res) => {
             return res.status(400).send({ message: 'User ID is required.' });
         }
 
-        console.log(`Received request for user ID: ${userId}`);
+        //console.log(`Received request for user ID: ${userId}`);
 
         // Retrieve user data
         let pool = await sql.connect(sqlConfig);
@@ -279,15 +279,15 @@ app.post('/ai-assistant', async (req, res) => {
 
             const userGenres = userGenresResult.recordset.map(record => record.GenreName).join(' ');
 
-            console.log(`User genres: ${userGenres}`);
+            //console.log(`User genres: ${userGenres}`);
 
             // Fetch user embedding from search index
             const userSearchClient = new SearchClient(searchEndpoint, 'users-index', new AzureKeyCredential(searchApiKey));
             const userEmbeddingResult = await userSearchClient.getDocument(String(user.UserId));
             const userEmbedding = userEmbeddingResult.Embedding;
 
-            console.log(`User embedding result: ${JSON.stringify(userEmbeddingResult)}`);
-            console.log(`User embedding: ${userEmbedding}`);
+            //console.log(`User embedding result: ${JSON.stringify(userEmbeddingResult)}`);
+            //console.log(`User embedding: ${userEmbedding}`);
 
             if (!userEmbedding || userEmbedding.length === 0) {
                 console.error('User embedding not found.');
