@@ -45,6 +45,7 @@ This project is about building a new **Ai Assistant in Web App** leveraging the 
 This Identity System project demonstrates a seamless integration of modern web technologies with Azure's cloud services. It showcases how Azure SQL and Azure Web Apps can be utilized to build and deploy a secure and scalable user authentication system, complete with a front-end user interface and a back-end API service.
 ## Instructions
 **Follow the Blog for Detailed Instructions**: For step-by-step guidance, visit [Azure AI Search: Nativity in Microsoft Fabric](https://www.cloudblogger.eu/2024/07/23/azure-ai-search-nativity-in-microsoft-fabric/).
+
 **Additional help for the Identity** : step-by-step guidance, visit [Custom Identity Database with Azure SQL and Web Apps](https://www.cloudblogger.eu/2023/12/11/custom-identity-database-with-azure-sql-and-web-apps/).
 ## Contribution
 
