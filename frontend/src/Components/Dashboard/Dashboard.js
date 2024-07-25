@@ -8,7 +8,6 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState('');
   const [aiResponse, setAiResponse] = useState('');
-  const [recommendations, setRecommendations] = useState([]);
   const [chatHistory, setChatHistory] = useState([]);
   const navigate = useNavigate();
 
@@ -26,13 +25,22 @@ const Dashboard = () => {
           console.error('Error fetching user data:', error);
           navigate('/');
         }
+      } else {
+        console.error('User ID is missing from local storage.');
+        navigate('/');
       }
     };
 
     const fetchRecommendations = async (userId) => {
       try {
         const response = await axios.post(`${process.env.REACT_APP_API_URL}/ai-assistant`, { query: 'recommendation', userId });
-        setRecommendations(response.data.recommendations);
+        const recommendations = response.data.recommendations;
+        const newEntry = {
+          query: 'recommendation',
+          response: response.data.response,
+          recommendations: recommendations || [],
+        };
+        setChatHistory((prevChatHistory) => [...prevChatHistory, newEntry]);
       } catch (error) {
         console.error('Error fetching recommendations:', error);
       }
@@ -52,6 +60,12 @@ const Dashboard = () => {
 
     try {
       const userId = localStorage.getItem('UserId');
+      if (!userId) {
+        console.error('User ID is missing.');
+        setAiResponse('User ID is missing.');
+        return;
+      }
+
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/ai-assistant`, { query, userId });
       setAiResponse(response.data.response);
 
@@ -61,7 +75,7 @@ const Dashboard = () => {
         response: response.data.response,
         recommendations: response.data.recommendations || [],
       };
-      setChatHistory([...chatHistory, newEntry]);
+      setChatHistory((prevChatHistory) => [...prevChatHistory, newEntry]);
       setQuery(''); // Clear the input box after submission
     } catch (error) {
       console.error('Error during query processing:', error);
@@ -90,8 +104,9 @@ const Dashboard = () => {
         </div>
         <img src={logo} className="App-logo" alt="logo" />
       </header>
-      <main>
-        <div className="chat-box">
+      <main className="main-content">
+        <div className="chat-history-container">
+          <div className="chat-history-title">Chat History</div>
           <div className="chat-history">
             {chatHistory.map((entry, index) => (
               <div key={index} className="chat-entry">
@@ -107,16 +122,20 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask about books or request recommendations..."
-          />
-          <button onClick={handleQuery}>Send</button>
         </div>
-        <div className="ai-response">
-          {aiResponse}
+        <div className="chat-box-container">
+          <div className="chat-box">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ask about books or request recommendations..."
+            />
+            <button onClick={handleQuery}>Send</button>
+          </div>
+          <div className="ai-response">
+            {aiResponse}
+          </div>
         </div>
       </main>
     </div>

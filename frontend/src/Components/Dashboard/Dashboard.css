@@ -1,8 +1,11 @@
 /* Dashboard.css */
 
 .dashboard {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   background-color: #f0f8ff;
+  min-height: 100vh;
 }
 
 .dashboard-header {
@@ -13,6 +16,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
 }
 
@@ -58,56 +62,32 @@
   text-align: center;
 }
 
-.search-area {
+.main-content {
   display: flex;
-  justify-content: center;
-  margin: 20px 0;
-}
-
-.search-input {
-  width: 60%;
-  padding: 10px;
-  font-size: 16px;
-  border: none;
-  border-radius: 5px;
-}
-
-.search-button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.search-button:hover {
-  opacity: 0.8;
-}
-
-.map-container {
-  height: 400px; /* Set the height for the map */
+  flex-direction: row;
   width: 100%;
 }
 
-.ai-response {
-  margin-top: 20px;
+.chat-history-container {
+  width: 30%;
   padding: 10px;
-  border: 1px solid #ddd; /* Example styling */
-  border-radius: 5px;
+  border-right: 1px solid #ddd;
+  background-color: #fff;
 }
 
-/* Chat box styles */
-.chat-box {
-  margin: 20px 0;
+.chat-history-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: left;
 }
 
 .chat-history {
-  max-height: 400px;
+  max-height: 70vh;
   overflow-y: auto;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  margin-bottom: 20px;
   background-color: #fff;
 }
 
@@ -132,8 +112,18 @@
   font-style: italic;
 }
 
+.chat-box-container {
+  width: 70%;
+  padding: 10px;
+}
+
+.chat-box {
+  margin: 20px 0;
+  width: 100%;
+}
+
 input[type="text"] {
-  width: 80%;
+  width: calc(100% - 100px);
   padding: 10px;
   margin-bottom: 10px;
   border: 1px solid #ddd;
@@ -152,9 +142,25 @@ button:hover {
   opacity: 0.8;
 }
 
+.ai-response {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ddd; /* Example styling */
+  border-radius: 5px;
+}
+
 /* Responsive behavior */
 @media (max-width: 768px) {
   .search-input {
     width: 80%;
+  }
+
+  .main-content {
+    flex-direction: column;
+  }
+
+  .chat-history-container,
+  .chat-box-container {
+    width: 100%;
   }
 }
