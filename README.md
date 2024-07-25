@@ -46,12 +46,11 @@ This Identity System project demonstrates a seamless integration of modern web t
 ## Instructions
 **Follow the Blog for Detailed Instructions**: For step-by-step guidance, visit [Azure AI Search: Nativity in Microsoft Fabric](https://www.cloudblogger.eu/2024/07/23/azure-ai-search-nativity-in-microsoft-fabric/).
 
+**Additional help for the Identity** : step-by-step guidance, visit [Custom Identity Database with Azure SQL and Web Apps](https://www.cloudblogger.eu/2023/12/11/custom-identity-database-with-azure-sql-and-web-apps/).
 ## Contribution
 
 Contributions are welcome! If you have suggestions or improvements, feel free to fork the repository, make your changes, and submit a pull request.
 
-## Instructions
-**Follow the Blog for Detailed Instructions**: For step-by-step guidance, visit [Custom Identity Database with Azure SQL and Web Apps](https://www.cloudblogger.eu/2023/12/11/custom-identity-database-with-azure-sql-and-web-apps/).
 
 ## Contribute
 We encourage contributions! If you have ideas on how to improve this application or want to report a bug, please feel free to open an issue or submit a pull request.
