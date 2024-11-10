@@ -1,6 +1,6 @@
 resource "azurerm_resource_group" "rgroup" {
   name     = "rg-idbapp"
-  location = "Switzerland North"
+  location = "Sweden Central"
 }
 resource "random_string" "str-name" {
   length  = 5
@@ -38,8 +38,8 @@ resource "azurerm_mssql_server" "sqlsrv" {
   administrator_login_password = var.sql_admin_password
 
   azuread_administrator {
-    login_username = "superdev@securevoip.eu"
-    object_id      = "34ac7c44-82ff-40f1-8e3c-b74524c198c5"
+    login_username = "xxx@xxx.xx"
+    object_id      = "xxxxxxxxxxxxxxxxx"
   }
   public_network_access_enabled = true
 }
@@ -110,10 +110,10 @@ output "acrname" {
 
 # Create AI Search
 resource "azurerm_search_service" "aisearch" {
-  name                = "ais${random_string.str-name.result}"
+  name                = "azai${random_string.str-name.result}"
   resource_group_name = azurerm_resource_group.rgroup.name
   location            = azurerm_resource_group.rgroup.location
-  sku                 = "standard"
+  sku                 = "basic"
 }
 
 # Create User Assigned Managed Identity

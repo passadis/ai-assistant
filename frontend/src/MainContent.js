@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import logo from './logo.png'; // Update the path to your logo
+import logo from './logo.png';
 import './App.css';
 
 function MainContent() {
@@ -9,23 +9,19 @@ function MainContent() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState('');
-  
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/login`, {
         username,
-        password
+        password,
       });
-      // Handle successful login here
-      // For example, save the token to localStorage and redirect
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('UserId', response.data.UserId);
-      navigate('/dashboard');// Redirect to dashboard or another page
+      navigate('/dashboard');
     } catch (error) {
-      console.error("Error logging in:", error.response);
-      // Handle errors here, such as displaying a notification
+      console.error('Error logging in:', error.response);
       setErrorMessage('Login failed. Please check your credentials.');
     }
   };
@@ -37,25 +33,28 @@ function MainContent() {
   return (
     <header className="App-header">
       <img src={logo} className="App-logo" alt="logo" />
-      <h1>Welcome Azure Book recommendations Web App</h1>
-      <p>Sign in or register your Account</p>
-      {errorMessage && <p className="error-message">{errorMessage}</p>} {/* Display error message */}
-      <form onSubmit={handleLogin}>
+      <h1>Welcome to Azure Book Recommendations Web App</h1>
+      <p>Log in or register your Account</p>
+      {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+      <form onSubmit={handleLogin} className="form-container">
         <input
           type="text"
+          className="input-field"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
         <input
           type="password"
+          className="input-field"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit">Login</button>
+        <button type="submit" className="button login-btn">Login</button>
       </form>
-      <button onClick={navigateToSignup}>Sign Up</button>
+      <button onClick={navigateToSignup} className="button signup-btn">Register</button>
     </header>
   );
 }
