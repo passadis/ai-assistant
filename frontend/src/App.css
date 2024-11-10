@@ -1,52 +1,80 @@
 .App {
   text-align: center;
-  background-color: #f0f8ff; /* Light blue background */
+  background-color: #f0f8ff;
 }
 
 .App-header {
-  background-color: #e0fff0; /* Light green header background */
+  background-color: #0d38b7;
   padding: 20px;
   border-radius: 10px;
   margin: 30px auto;
   width: 80%;
+  max-width: 600px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
 }
 
-.logo {
-  border-radius: 50%;
+.App-logo {
   width: 100px;
-  height: 100px;
-  background-color: #fff;
-  margin: 0 auto 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: bold;
+  height: auto;
+  margin-bottom: 20px;
 }
 
-input {
-  margin: 10px;
+h1 {
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+p {
+  color: #f0f8ff;
+  margin-bottom: 20px;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-field {
+  width: 80%;
+  max-width: 400px;
   padding: 10px;
-  border: none;
+  margin: 10px 0;
+  border: 1px solid #ced4da;
   border-radius: 5px;
 }
 
-button {
-  background-color: #4CAF50; /* Green */
-  color: white;
-  padding: 14px 20px;
-  margin: 8px 0;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.input-field:focus {
+  outline: none;
+  border-color: #4a90e2;
 }
 
-button:hover {
+.button {
+  background-color: #05579a;
+  color: white;
+  padding: 12px 20px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.button:hover {
   opacity: 0.8;
 }
 
-.App-logo {
-  width: 100px; /* Adjust the size as necessary */
-  height: auto;
-  margin-bottom: 20px; /* Add spacing below the logo if needed */
+.signup-btn {
+  background-color: #007bff;
+}
+
+.signup-btn:hover {
+  background-color: #0069d9;
+}
+
+.error-message {
+  color: #ff4d4d;
+  font-weight: bold;
+  margin-bottom: 10px;
 }

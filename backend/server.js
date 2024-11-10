@@ -23,6 +23,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
 // set up rate limiter: maximum of five requests per minute
 var RateLimit = require('express-rate-limit');
 var limiter = RateLimit({
@@ -38,6 +39,8 @@ app.get('/:path', function(req, res) {
   if (isValidPath(path))
     res.sendFile(path);
 });
+
+
 const vaultName = process.env.AZURE_KEY_VAULT_NAME;
 const vaultUrl = `https://${vaultName}.vault.azure.net`;
 const credential = new DefaultAzureCredential({
@@ -255,6 +258,142 @@ app.get('/user/:UserId', async (req, res) => {
     }
 });
 
+// // AI Assistant endpoint for book questions and recommendations
+// app.post('/ai-assistant', async (req, res) => {
+//     const { query, userId } = req.body;
+
+//     console.log('Received request body:', req.body);
+//     console.log('Extracted userId:', userId);
+
+//     try {
+//         if (!userId) {
+//             console.error('User ID is missing from the request.');
+//             return res.status(400).send({ message: 'User ID is required.' });
+//         }
+
+//         //console.log(`Received request for user ID: ${userId}`);
+
+//         // Retrieve user data
+//         let pool = await sql.connect(sqlConfig);
+//         let userResult = await pool.request()
+//             .input('UserId', sql.Int, userId)
+//             .query('SELECT * FROM Users WHERE UserId = @UserId');
+        
+//         const user = userResult.recordset[0];
+
+//         if (!user) {
+//             console.error(`User with ID ${userId} not found.`);
+//             return res.status(404).send({ message: `User with ID ${userId} not found.` });
+//         }
+
+//         console.log(`User data: ${JSON.stringify(user)}`);
+
+//         if (query.toLowerCase().includes("recommendation")) {
+//             // Fetch user genres
+//             const userGenresResult = await pool.request()
+//                 .input('UserId', sql.Int, userId)
+//                 .query('SELECT GenreName FROM Genres g JOIN UsersGenres ug ON g.GenreId = ug.GenreId WHERE ug.UserId = @UserId');
+
+//             const userGenres = userGenresResult.recordset.map(record => record.GenreName).join(' ');
+
+//             //console.log(`User genres: ${userGenres}`);
+
+//             // Fetch user embedding from search index
+//             const userSearchClient = new SearchClient(searchEndpoint, 'users-index', new AzureKeyCredential(searchApiKey));
+//             const userEmbeddingResult = await userSearchClient.getDocument(String(user.UserId));
+//             const userEmbedding = userEmbeddingResult.Embedding;
+
+//             //console.log(`User embedding result: ${JSON.stringify(userEmbeddingResult)}`);
+//             //console.log(`User embedding: ${userEmbedding}`);
+
+//             if (!userEmbedding || userEmbedding.length === 0) {
+//                 console.error('User embedding not found.');
+//                 return res.status(500).send({ message: 'User embedding not found.' });
+//             }
+
+//             // Search for recommendations
+//             const bookSearchClient = new SearchClient(searchEndpoint, 'books-index', new AzureKeyCredential(searchApiKey));
+//             const searchResponse = await bookSearchClient.search("*", {
+//                 vectors: [{
+//                     value: userEmbedding,
+//                     fields: ["Embedding"],
+//                     kNearestNeighborsCount: 5
+//                 }],
+//                 includeTotalCount: true,
+//                 select: ["Title", "Author"]
+//             });
+
+//             const recommendations = [];
+//             for await (const result of searchResponse.results) {
+//                 recommendations.push({
+//                     title: result.document.Title,
+//                     author: result.document.Author,
+//                     score: result.score
+//                 });
+//             }
+
+//             // Limit recommendations to top 5
+//             const topRecommendations = recommendations.slice(0, 5);
+
+//             return res.json({ response: "Here are some personalized recommendations for you:", recommendations: topRecommendations });
+//         } else {
+//             // General book query
+//             const openaiClient = new OpenAIClient(openaiEndpoint, new AzureKeyCredential(openaiApiKey));
+//             const deploymentId = "gpt";  // Replace with your deployment ID
+
+//             // Extract rating and genre from query
+//             const ratingMatch = query.match(/rating over (\d+(\.\d+)?)/);
+//             const genreMatch = query.match(/genre (\w+)/i);
+//             const rating = ratingMatch ? parseFloat(ratingMatch[1]) : null;
+//             const genre = genreMatch ? genreMatch[1] : null;
+
+//             if (rating && genre) {
+//                 // Search for books with the specified genre and rating
+//                 const bookSearchClient = new SearchClient(searchEndpoint, 'books-index', new AzureKeyCredential(searchApiKey));
+//                 const searchResponse = await bookSearchClient.search("*", {
+//                     filter: `Rating gt ${rating} and Genres/any(g: g eq '${genre}')`,
+//                     top: 5,
+//                     select: ["Title", "Author", "Rating"]
+//                 });
+
+//                 const books = [];
+//                 for await (const result of searchResponse.results) {
+//                     books.push({
+//                         title: result.document.Title,
+//                         author: result.document.Author,
+//                         rating: result.document.Rating
+//                     });
+//                 }
+
+//                 const bookResponse = books.map(book => `${book.title} by ${book.author} with rating ${book.rating}`).join('\n');
+//                 return res.json({ response: `Here are 5 books with rating over ${rating} in ${genre} genre:\n${bookResponse}` });
+//             } else {
+//                 // Handle general queries about books using OpenAI with streaming chat completions
+//                 const events = await openaiClient.streamChatCompletions(
+//                     deploymentId,
+//                     [
+//                         { role: "system", content: "You are a helpful assistant that answers questions about books and provides personalized recommendations." },
+//                         { role: "user", content: query }
+//                     ],
+//                     { maxTokens: 350 }
+//                 );
+
+//                 let aiResponse = "";
+//                 for await (const event of events) {
+//                     for (const choice of event.choices) {
+//                         aiResponse += choice.delta?.content || '';
+//                     }
+//                 }
+
+//                 return res.json({ response: aiResponse });
+//             }
+//         }
+//     } catch (error) {
+//         console.error('Error processing AI Assistant request:', error);
+//         return res.status(500).send({ message: 'Error processing your request.' });
+//     }
+// });
+
 // AI Assistant endpoint for book questions and recommendations
 app.post('/ai-assistant', async (req, res) => {
     const { query, userId } = req.body;
@@ -267,8 +406,6 @@ app.post('/ai-assistant', async (req, res) => {
             console.error('User ID is missing from the request.');
             return res.status(400).send({ message: 'User ID is required.' });
         }
-
-        //console.log(`Received request for user ID: ${userId}`);
 
         // Retrieve user data
         let pool = await sql.connect(sqlConfig);
@@ -283,8 +420,6 @@ app.post('/ai-assistant', async (req, res) => {
             return res.status(404).send({ message: `User with ID ${userId} not found.` });
         }
 
-        console.log(`User data: ${JSON.stringify(user)}`);
-
         if (query.toLowerCase().includes("recommendation")) {
             // Fetch user genres
             const userGenresResult = await pool.request()
@@ -293,31 +428,33 @@ app.post('/ai-assistant', async (req, res) => {
 
             const userGenres = userGenresResult.recordset.map(record => record.GenreName).join(' ');
 
-            //console.log(`User genres: ${userGenres}`);
-
             // Fetch user embedding from search index
             const userSearchClient = new SearchClient(searchEndpoint, 'users-index', new AzureKeyCredential(searchApiKey));
             const userEmbeddingResult = await userSearchClient.getDocument(String(user.UserId));
             const userEmbedding = userEmbeddingResult.Embedding;
-
-            //console.log(`User embedding result: ${JSON.stringify(userEmbeddingResult)}`);
-            //console.log(`User embedding: ${userEmbedding}`);
 
             if (!userEmbedding || userEmbedding.length === 0) {
                 console.error('User embedding not found.');
                 return res.status(500).send({ message: 'User embedding not found.' });
             }
 
-            // Search for recommendations
+            // Search for book recommendations using both Embedding and DescriptionEmbedding
             const bookSearchClient = new SearchClient(searchEndpoint, 'books-index', new AzureKeyCredential(searchApiKey));
             const searchResponse = await bookSearchClient.search("*", {
-                vectors: [{
-                    value: userEmbedding,
-                    fields: ["Embedding"],
-                    kNearestNeighborsCount: 5
-                }],
+                vectors: [
+                    {
+                        value: userEmbedding,
+                        fields: ["Embedding"],
+                        kNearestNeighborsCount: 3
+                    },
+                    {
+                        value: userEmbedding,
+                        fields: ["DescriptionEmbedding"],
+                        kNearestNeighborsCount: 2
+                    }
+                ],
                 includeTotalCount: true,
-                select: ["Title", "Author"]
+                select: ["Title", "Author", "Description"]
             });
 
             const recommendations = [];
@@ -325,6 +462,7 @@ app.post('/ai-assistant', async (req, res) => {
                 recommendations.push({
                     title: result.document.Title,
                     author: result.document.Author,
+                    description: result.document.Description,
                     score: result.score
                 });
             }
@@ -332,58 +470,36 @@ app.post('/ai-assistant', async (req, res) => {
             // Limit recommendations to top 5
             const topRecommendations = recommendations.slice(0, 5);
 
-            return res.json({ response: "Here are some personalized recommendations for you:", recommendations: topRecommendations });
+            return res.json({
+                response: "Here are some personalized recommendations for you:",
+                recommendations: topRecommendations.map(book => ({
+                    title: book.title,
+                    author: book.author,
+                    description: book.description
+                }))
+            });
         } else {
-            // General book query
+            // General book query using OpenAI
             const openaiClient = new OpenAIClient(openaiEndpoint, new AzureKeyCredential(openaiApiKey));
-            const deploymentId = "gpt";  // Replace with your deployment ID
+            const deploymentId = "gpt";
 
-            // Extract rating and genre from query
-            const ratingMatch = query.match(/rating over (\d+(\.\d+)?)/);
-            const genreMatch = query.match(/genre (\w+)/i);
-            const rating = ratingMatch ? parseFloat(ratingMatch[1]) : null;
-            const genre = genreMatch ? genreMatch[1] : null;
+            const events = await openaiClient.streamChatCompletions(
+                deploymentId,
+                [
+                    { role: "system", content: "You are a helpful assistant that answers questions about books and provides personalized recommendations." },
+                    { role: "user", content: query }
+                ],
+                { maxTokens: 350 }
+            );
 
-            if (rating && genre) {
-                // Search for books with the specified genre and rating
-                const bookSearchClient = new SearchClient(searchEndpoint, 'books-index', new AzureKeyCredential(searchApiKey));
-                const searchResponse = await bookSearchClient.search("*", {
-                    filter: `Rating gt ${rating} and Genres/any(g: g eq '${genre}')`,
-                    top: 5,
-                    select: ["Title", "Author", "Rating"]
-                });
-
-                const books = [];
-                for await (const result of searchResponse.results) {
-                    books.push({
-                        title: result.document.Title,
-                        author: result.document.Author,
-                        rating: result.document.Rating
-                    });
+            let aiResponse = "";
+            for await (const event of events) {
+                for (const choice of event.choices) {
+                    aiResponse += choice.delta?.content || '';
                 }
-
-                const bookResponse = books.map(book => `${book.title} by ${book.author} with rating ${book.rating}`).join('\n');
-                return res.json({ response: `Here are 5 books with rating over ${rating} in ${genre} genre:\n${bookResponse}` });
-            } else {
-                // Handle general queries about books using OpenAI with streaming chat completions
-                const events = await openaiClient.streamChatCompletions(
-                    deploymentId,
-                    [
-                        { role: "system", content: "You are a helpful assistant that answers questions about books and provides personalized recommendations." },
-                        { role: "user", content: query }
-                    ],
-                    { maxTokens: 350 }
-                );
-
-                let aiResponse = "";
-                for await (const event of events) {
-                    for (const choice of event.choices) {
-                        aiResponse += choice.delta?.content || '';
-                    }
-                }
-
-                return res.json({ response: aiResponse });
             }
+
+            return res.json({ response: aiResponse });
         }
     } catch (error) {
         console.error('Error processing AI Assistant request:', error);
