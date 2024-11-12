@@ -15,12 +15,6 @@ import bodyParser from 'body-parser';
 
 dotenv.config();
 
-// const signalRConnectionString = process.env.SIGNALR_CONNECTION_STRING; // Ensure this is set in your .env file
-
-// // Initialize the Azure SignalR Service client
-// const signalRClient = new SignalRClient(signalRConnectionString, {
-//   serviceEndpoint: process.env.SIGNALR_ENDPOINT,
-// });
 
 
 
