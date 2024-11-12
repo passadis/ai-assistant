@@ -1,0 +1,24 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": ["post"],
+      "route": "update-recommendations"
+    },
+    {
+      "type": "sql",
+      "commandText": "dbo.Users",
+      "connectionStringSetting": "AzureSqlConnectionString",
+      "direction": "out",
+      "name": "outputSql"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    }
+  ]
+}
