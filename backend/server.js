@@ -33,6 +33,32 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// set up rate limiter: maximum of five requests per minute
+var RateLimit = require('express-rate-limit');
+var limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+});
+
+// apply rate limiter to all requests
+app.use(limiter);
+
+import path from 'path';
+
+const ROOT = path.resolve('/var/www/');
+
+app.get('/:path', function(req, res) {
+  let userPath = req.params.path;
+  let resolvedPath = path.resolve(ROOT, userPath);
+  if (resolvedPath.startsWith(ROOT)) {
+    res.sendFile(resolvedPath);
+  } else {
+    res.status(403).send('Access denied');
+  }
+});
+
+
+
 const vaultName = process.env.AZURE_KEY_VAULT_NAME;
 const vaultUrl = `https://${vaultName}.vault.azure.net`;
 const credential = new DefaultAzureCredential({
@@ -44,16 +70,7 @@ async function getSecret(secretName) {
     const secret = await secretClient.getSecret(secretName);
     return secret.value;
 }
-// Function to get the SignalR connection string from Key Vault
-// async function getSignalRConnectionString() {
-//     try {
-//         const secret = await secretClient.getSecret('SignalRConnectionString');
-//         return secret.value;
-//     } catch (error) {
-//         console.error('Error retrieving SignalR connection string:', error);
-//         throw error;
-//     }
-// }
+
 const inMemoryStorage = multer.memoryStorage();
 const uploadStrategy = multer({ storage: inMemoryStorage }).single('photo');
 
