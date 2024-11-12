@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import logo from './logo.png';
 import './App.css';
+import { AuthContext } from './AuthContext';
 
 function MainContent() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Access the AuthContext
+ const { login } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,8 +21,13 @@ function MainContent() {
         username,
         password,
       });
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('UserId', response.data.UserId);
+      // localStorage.setItem('token', response.data.token);
+      // localStorage.setItem('UserId', response.data.UserId);
+      const { token, UserId } = response.data;
+
+      // Update the global auth state
+      login(token, UserId)
+
       navigate('/dashboard');
     } catch (error) {
       console.error('Error logging in:', error.response);

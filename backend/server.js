@@ -15,6 +15,15 @@ import bodyParser from 'body-parser';
 
 dotenv.config();
 
+// const signalRConnectionString = process.env.SIGNALR_CONNECTION_STRING; // Ensure this is set in your .env file
+
+// // Initialize the Azure SignalR Service client
+// const signalRClient = new SignalRClient(signalRConnectionString, {
+//   serviceEndpoint: process.env.SIGNALR_ENDPOINT,
+// });
+
+
+
 const app = express();
 app.use(cors({ origin: '*' }));
 app.use((req, res, next) => {
@@ -23,31 +32,6 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-
-// set up rate limiter: maximum of five requests per minute
-var RateLimit = require('express-rate-limit');
-var limiter = RateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per windowMs
-});
-
-// apply rate limiter to all requests
-app.use(limiter);
-
-import path from 'path';
-
-const ROOT = path.resolve('/var/www/');
-
-app.get('/:path', function(req, res) {
-  let userPath = req.params.path;
-  let resolvedPath = path.resolve(ROOT, userPath);
-  if (resolvedPath.startsWith(ROOT)) {
-    res.sendFile(resolvedPath);
-  } else {
-    res.status(403).send('Access denied');
-  }
-});
-
 
 const vaultName = process.env.AZURE_KEY_VAULT_NAME;
 const vaultUrl = `https://${vaultName}.vault.azure.net`;
@@ -60,7 +44,16 @@ async function getSecret(secretName) {
     const secret = await secretClient.getSecret(secretName);
     return secret.value;
 }
-
+// Function to get the SignalR connection string from Key Vault
+// async function getSignalRConnectionString() {
+//     try {
+//         const secret = await secretClient.getSecret('SignalRConnectionString');
+//         return secret.value;
+//     } catch (error) {
+//         console.error('Error retrieving SignalR connection string:', error);
+//         throw error;
+//     }
+// }
 const inMemoryStorage = multer.memoryStorage();
 const uploadStrategy = multer({ storage: inMemoryStorage }).single('photo');
 
@@ -92,6 +85,10 @@ async function initializeApp() {
     searchApiKey = await getSecret("search-apikey");
     openaiEndpoint = await getSecret("openai-endpoint");
     openaiApiKey = await getSecret("openai-apikey");
+    
+
+
+
 
     //console.log("SQL Config:", sqlConfig);
     // console.log("Storage Account Name:", storageAccountName);
@@ -266,141 +263,42 @@ app.get('/user/:UserId', async (req, res) => {
     }
 });
 
-// // AI Assistant endpoint for book questions and recommendations
-// app.post('/ai-assistant', async (req, res) => {
-//     const { query, userId } = req.body;
+// Check if personalized recommendations are ready for a user
+app.get('/api/check-recommendations', async (req, res) => {
+    const { userId } = req.query;
 
-//     console.log('Received request body:', req.body);
-//     console.log('Extracted userId:', userId);
+    // Validate user ID
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
 
-//     try {
-//         if (!userId) {
-//             console.error('User ID is missing from the request.');
-//             return res.status(400).send({ message: 'User ID is required.' });
-//         }
+    try {
+        // Connect to the database
+        let pool = await sql.connect(sqlConfig);
+        let result = await pool.request()
+            .input('UserId', sql.Int, userId)
+            .query('SELECT RecommendationsReady FROM Users WHERE UserId = @UserId');
 
-//         //console.log(`Received request for user ID: ${userId}`);
+        // Check if user exists
+        if (result.recordset.length === 0) {
+            return res.status(404).send({ message: 'User not found' });
+        }
 
-//         // Retrieve user data
-//         let pool = await sql.connect(sqlConfig);
-//         let userResult = await pool.request()
-//             .input('UserId', sql.Int, userId)
-//             .query('SELECT * FROM Users WHERE UserId = @UserId');
-        
-//         const user = userResult.recordset[0];
+        // Get the status from the database
+        const isReady = result.recordset[0].RecommendationsReady;
 
-//         if (!user) {
-//             console.error(`User with ID ${userId} not found.`);
-//             return res.status(404).send({ message: `User with ID ${userId} not found.` });
-//         }
+        // Send the status back to the client
+        res.json({ recommendationsReady: isReady });
+    } catch (error) {
+        console.error('Error checking recommendations status:', error);
+        res.status(500).json({ message: 'Error checking recommendations status' });
+    }
+});
 
-//         console.log(`User data: ${JSON.stringify(user)}`);
 
-//         if (query.toLowerCase().includes("recommendation")) {
-//             // Fetch user genres
-//             const userGenresResult = await pool.request()
-//                 .input('UserId', sql.Int, userId)
-//                 .query('SELECT GenreName FROM Genres g JOIN UsersGenres ug ON g.GenreId = ug.GenreId WHERE ug.UserId = @UserId');
 
-//             const userGenres = userGenresResult.recordset.map(record => record.GenreName).join(' ');
 
-//             //console.log(`User genres: ${userGenres}`);
 
-//             // Fetch user embedding from search index
-//             const userSearchClient = new SearchClient(searchEndpoint, 'users-index', new AzureKeyCredential(searchApiKey));
-//             const userEmbeddingResult = await userSearchClient.getDocument(String(user.UserId));
-//             const userEmbedding = userEmbeddingResult.Embedding;
-
-//             //console.log(`User embedding result: ${JSON.stringify(userEmbeddingResult)}`);
-//             //console.log(`User embedding: ${userEmbedding}`);
-
-//             if (!userEmbedding || userEmbedding.length === 0) {
-//                 console.error('User embedding not found.');
-//                 return res.status(500).send({ message: 'User embedding not found.' });
-//             }
-
-//             // Search for recommendations
-//             const bookSearchClient = new SearchClient(searchEndpoint, 'books-index', new AzureKeyCredential(searchApiKey));
-//             const searchResponse = await bookSearchClient.search("*", {
-//                 vectors: [{
-//                     value: userEmbedding,
-//                     fields: ["Embedding"],
-//                     kNearestNeighborsCount: 5
-//                 }],
-//                 includeTotalCount: true,
-//                 select: ["Title", "Author"]
-//             });
-
-//             const recommendations = [];
-//             for await (const result of searchResponse.results) {
-//                 recommendations.push({
-//                     title: result.document.Title,
-//                     author: result.document.Author,
-//                     score: result.score
-//                 });
-//             }
-
-//             // Limit recommendations to top 5
-//             const topRecommendations = recommendations.slice(0, 5);
-
-//             return res.json({ response: "Here are some personalized recommendations for you:", recommendations: topRecommendations });
-//         } else {
-//             // General book query
-//             const openaiClient = new OpenAIClient(openaiEndpoint, new AzureKeyCredential(openaiApiKey));
-//             const deploymentId = "gpt";  // Replace with your deployment ID
-
-//             // Extract rating and genre from query
-//             const ratingMatch = query.match(/rating over (\d+(\.\d+)?)/);
-//             const genreMatch = query.match(/genre (\w+)/i);
-//             const rating = ratingMatch ? parseFloat(ratingMatch[1]) : null;
-//             const genre = genreMatch ? genreMatch[1] : null;
-
-//             if (rating && genre) {
-//                 // Search for books with the specified genre and rating
-//                 const bookSearchClient = new SearchClient(searchEndpoint, 'books-index', new AzureKeyCredential(searchApiKey));
-//                 const searchResponse = await bookSearchClient.search("*", {
-//                     filter: `Rating gt ${rating} and Genres/any(g: g eq '${genre}')`,
-//                     top: 5,
-//                     select: ["Title", "Author", "Rating"]
-//                 });
-
-//                 const books = [];
-//                 for await (const result of searchResponse.results) {
-//                     books.push({
-//                         title: result.document.Title,
-//                         author: result.document.Author,
-//                         rating: result.document.Rating
-//                     });
-//                 }
-
-//                 const bookResponse = books.map(book => `${book.title} by ${book.author} with rating ${book.rating}`).join('\n');
-//                 return res.json({ response: `Here are 5 books with rating over ${rating} in ${genre} genre:\n${bookResponse}` });
-//             } else {
-//                 // Handle general queries about books using OpenAI with streaming chat completions
-//                 const events = await openaiClient.streamChatCompletions(
-//                     deploymentId,
-//                     [
-//                         { role: "system", content: "You are a helpful assistant that answers questions about books and provides personalized recommendations." },
-//                         { role: "user", content: query }
-//                     ],
-//                     { maxTokens: 350 }
-//                 );
-
-//                 let aiResponse = "";
-//                 for await (const event of events) {
-//                     for (const choice of event.choices) {
-//                         aiResponse += choice.delta?.content || '';
-//                     }
-//                 }
-
-//                 return res.json({ response: aiResponse });
-//             }
-//         }
-//     } catch (error) {
-//         console.error('Error processing AI Assistant request:', error);
-//         return res.status(500).send({ message: 'Error processing your request.' });
-//     }
-// });
 
 // AI Assistant endpoint for book questions and recommendations
 app.post('/ai-assistant', async (req, res) => {
@@ -494,10 +392,10 @@ app.post('/ai-assistant', async (req, res) => {
             const events = await openaiClient.streamChatCompletions(
                 deploymentId,
                 [
-                    { role: "system", content: "You are a helpful assistant that answers questions about books and provides personalized recommendations." },
+                    { role: "system", content: "You are a helpful assistant that answers questions about books and provides 5 personalized recommendations." },
                     { role: "user", content: query }
                 ],
-                { maxTokens: 350 }
+                { maxTokens: 550 }
             );
 
             let aiResponse = "";
