@@ -8,7 +8,7 @@
 
 ## Introduction
 
-This project is about building a new **Ai Assistant in Web App** leveraging the power of **Azure SQL Database**, **Ai Search Vector Index**, **Microsoft Fabric** and **Azure Web Apps**. The Project uses a Custom Identity Database where users provide preferences over Books Genres.The system takes the preferences and creates **embeddings** in Azure OpenAI alongside with a Books Dataset and combines the preferences with the Books Dataset, for an interactive AI Experience. The Users cna ask for recommendations, request specific details about Genres and Ratings and also interact in a normal chat converstation about literature with the AI Assistant, powered from OpenAI latest models.
+This project is about building a new **Ai Assistant in Web App** leveraging the power of **Azure SQL Database**, **Ai Search Vector Index**, **Microsoft Fabric** and **Azure Web Apps**. The Project uses a Custom Identity Database where users provide preferences over Books Genres.The system takes the preferences and creates **embeddings** in Azure OpenAI alongside with a Books Dataset and combines the preferences with the Books Dataset, for an interactive AI Experience. The Users can ask for recommendations, request specific details about Genres and Ratings and also interact in a normal chat converstation about literature with the AI Assistant, powered from OpenAI latest models.
 
 ## Project Build
 
