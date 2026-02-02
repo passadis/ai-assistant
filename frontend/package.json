@@ -9,7 +9,7 @@
     "axios": "^1.12.0",
     "azure-maps-control": "^3.0.3",
     "azure-storage": "^2.10.7",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express-rate-limit": "^7.3.1",
@@ -20,7 +20,7 @@
     "react": "^18.2.0",
     "react-bingmaps": "^3.6.1",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.19.0",
+    "react-router-dom": "^6.30.3",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
